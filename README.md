@@ -30,32 +30,42 @@
         4.66      4.68  t            lag= 1.32s
         4.68      4.70  j            lag= 1.30s
 
-    $ ./cut_syl_charsiu.py --aligner charsiu/zh_xlsr_fc_10ms
-    Available microphone sources:
-      1. Audio  [32, Sink.monitor PipeWire float32le 2ch 48000Hz, RUNNING]
-      2. Dummy  [33, PipeWire float32le 2ch 48000Hz, SUSPENDED]
-      3. android-e3b0c44  [16975, s16le 1ch 44100Hz, SUSPENDED]
-      4. alsa_input.usb-Generic_USB2.0_Device_20220701093623-00.mono-fallback  [18666, s16le 1ch 48000Hz, SUSPENDED]
-      5. bluez_input.84:AC:60:12:C9:0E  [39781, float32le 1ch 48000Hz, SUSPENDED]
-    Select microphone [1]: 4
+    $ ./cut_syl_charsiu.py \
+      --aligner charsiu/zh_xlsr_fc_10ms \
+      --source alsa_input.usb-Generic_USB2.0_Device_20220701093623-00.mono-fallback \
+      --window 0.75 \
+      --hop 0.05 \
+      --infer-interval 0.05 \
+      --right-context 0.12 \
+      --latency-msec 30 \
+      --process-time-msec 10 \
+      --profile
     Loading Charsiu model: charsiu/zh_xlsr_fc_10ms
     Recording from: alsa_input.usb-Generic_USB2.0_Device_20220701093623-00.mono-fallback
-    window=1.50s hop=0.05s right_context=0.25s sr=16000
+    window=0.75s hop=0.05s infer_interval=0.05s right_context=0.12s latency=30ms process_time=10ms sr=16000
     Press Ctrl-C to stop.
-        0.67      0.85  mao1         lag= 1.15s
-        0.85      1.01  tai2         lag= 0.99s
-        1.01      1.21  mao2         lag= 0.79s
-        1.21      1.47  tai2         lag= 0.53s
-        2.50      2.62  mao1         lag= 1.38s
-        2.62      2.87  tai1         lag= 1.13s
-        5.20      5.38  mao1         lag= 0.62s
-        5.38      5.55  tai1         lag= 0.45s
-        6.79      6.97  mao2         lag= 1.03s
-        6.97      7.15  tai2         lag= 0.85s
-        7.15      7.38  mao2         lag= 0.62s
-        7.38      7.64  tai2         lag= 0.36s
-       10.89     11.11  kai1         lag= 0.89s
-       11.44     11.66  kai1         lag= 0.34s
+    # infer= 236.0ms window=0.45s realtime_x=0.52 stream=0.45s
+    # infer= 278.7ms window=0.70s realtime_x=0.40 stream=0.70s
+    # infer= 354.2ms window=0.75s realtime_x=0.47 stream=1.05s
+    # infer= 293.6ms window=0.75s realtime_x=0.39 stream=1.45s
+    # infer= 313.9ms window=0.75s realtime_x=0.42 stream=1.80s
+    # infer= 285.3ms window=0.75s realtime_x=0.38 stream=2.15s
+        1.81      1.91  uo3          lag= 0.24s
+    # infer= 285.9ms window=0.75s realtime_x=0.38 stream=2.45s
+    # infer= 489.4ms window=0.75s realtime_x=0.65 stream=2.85s
+        2.31      2.43  da1          lag= 0.42s
+        2.43      2.58  da2          lag= 0.27s
+        2.58      2.72  da3          lag= 0.13s
+    # infer= 382.3ms window=0.75s realtime_x=0.51 stream=3.35s
+        2.72      3.00  da4          lag= 0.35s
+    # infer= 397.9ms window=0.75s realtime_x=0.53 stream=3.80s
+    # infer= 287.6ms window=0.75s realtime_x=0.38 stream=4.25s
+    # infer= 349.9ms window=0.75s realtime_x=0.47 stream=4.60s
+        4.07      4.20  ga1          lag= 0.40s
+        4.20      4.34  da2          lag= 0.26s
+    # infer= 375.9ms window=0.75s realtime_x=0.50 stream=5.00s
+        4.35      4.49  da3          lag= 0.51s
+        4.49      4.78  ga4          lag= 0.22s
 
 
 ## Charsiu: A transformer-based phonetic aligner [[arXiv]](https://arxiv.org/abs/2110.03876)
