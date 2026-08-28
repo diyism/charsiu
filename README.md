@@ -1,35 +1,4 @@
-    $ ./cut_syl_charsiu.py --aligner charsiu/zh_w2v2_tiny_fc_10ms
-    Available microphone sources:
-      1. Audio  [32, Sink.monitor PipeWire float32le 2ch 48000Hz, RUNNING]
-      2. Dummy  [33, PipeWire float32le 2ch 48000Hz, SUSPENDED]
-      3. android-e3b0c44  [16975, s16le 1ch 44100Hz, SUSPENDED]
-      4. alsa_input.usb-Generic_USB2.0_Device_20220701093623-00.mono-fallback  [18666, s16le 1ch 48000Hz, SUSPENDED]
-      5. bluez_input.84:AC:60:12:C9:0E  [39781, float32le 1ch 48000Hz, SUSPENDED]
-    Select microphone [1]: 4
-    Loading Charsiu model: charsiu/zh_w2v2_tiny_fc_10ms
-    Recording from: alsa_input.usb-Generic_USB2.0_Device_20220701093623-00.mono-fallback
-    window=1.50s hop=0.05s right_context=0.25s sr=16000
-    Press Ctrl-C to stop.
-        0.63      0.66  l            lag= 1.34s
-        0.66      0.85  mou2         lag= 1.15s
-        0.85      1.15  tai4         lag= 0.85s
-        1.33      1.47  mao2         lag= 0.53s
-        1.47      1.49  ao1          lag= 0.51s
-        1.49      1.51  ao2          lag= 0.49s
-        1.51      1.54  ou2          lag= 0.46s
-        2.56      2.68  me5          lag= 1.32s
-        2.68      2.71  o2           lag= 1.29s
-        2.72      2.83  ta1          lag= 1.17s
-        2.83      2.93  ai4          lag= 1.07s
-        2.93      3.16  mao4         lag= 0.84s
-        3.16      3.46  tai4         lag= 0.54s
-        4.50      4.53  ai2          lag= 1.47s
-        4.54      4.61  ai2          lag= 1.39s
-        4.63      4.64  j            lag= 1.36s
-        4.64      4.66  p            lag= 1.34s
-        4.66      4.68  t            lag= 1.32s
-        4.68      4.70  j            lag= 1.30s
-
+    大的模型1.26GB 识别效果和实时性勉强还行, 延迟在0.2s到0.4s, 但是有音节会混淆:
     $ ./cut_syl_charsiu.py \
       --aligner charsiu/zh_xlsr_fc_10ms \
       --source alsa_input.usb-Generic_USB2.0_Device_20220701093623-00.mono-fallback \
@@ -67,6 +36,41 @@
         4.35      4.49  da3          lag= 0.51s
         4.49      4.78  ga4          lag= 0.22s
 
+    小的模型94MB, 则完全不行, 把噪音都当作音节识别出来了:
+    $ ./cut_syl_charsiu.py   --aligner charsiu/zh_w2v2_tiny_fc_10ms   --source alsa_input.usb-Generic_USB2.0_Device_20220701093623-00.mono-fallback   --window 0.6   --hop 0.05   --infer-interval 0.15   --right-context 0.10   --latency-msec 30   --process-time-msec 10   --profile
+    Loading Charsiu model: charsiu/zh_w2v2_tiny_fc_10ms
+    Recording from: alsa_input.usb-Generic_USB2.0_Device_20220701093623-00.mono-fallback
+    window=0.60s hop=0.05s infer_interval=0.15s right_context=0.10s latency=30ms process_time=10ms sr=16000
+    Press Ctrl-C to stop.
+    # infer=  96.7ms window=0.40s realtime_x=0.24 stream=0.40s
+    # infer=  77.1ms window=0.60s realtime_x=0.13 stream=0.65s
+        0.14      0.19  a1           lag= 0.46s
+        0.21      0.23  la1          lag= 0.42s
+        0.24      0.25  a1           lag= 0.40s
+        0.26      0.27  a1           lag= 0.38s
+        0.37      0.38  a1           lag= 0.27s
+        0.39      0.40  a1           lag= 0.25s
+        0.44      0.45  a5           lag= 0.20s
+        0.48      0.49  a5           lag= 0.16s
+        0.51      0.52  e5           lag= 0.13s
+    # infer=  75.4ms window=0.60s realtime_x=0.13 stream=0.90s
+        0.67      0.68  a3           lag= 0.22s
+        0.79      0.80  e5           lag= 0.10s
+    # infer=  71.6ms window=0.60s realtime_x=0.12 stream=1.10s
+    # infer=  71.1ms window=0.60s realtime_x=0.12 stream=1.35s
+        1.18      1.19  a1           lag= 0.16s
+        1.19      1.22  a5           lag= 0.13s
+    # infer=  76.6ms window=0.60s realtime_x=0.13 stream=1.55s
+        1.39      1.40  e5           lag= 0.15s
+    # infer=  87.3ms window=0.60s realtime_x=0.15 stream=1.80s
+        1.47      1.51  a1           lag= 0.29s
+    # infer=  88.9ms window=0.60s realtime_x=0.15 stream=2.00s
+        1.55      1.56  a1           lag= 0.44s
+    # infer=  49.5ms window=0.60s realtime_x=0.08 stream=2.25s
+        1.90      1.91  a1           lag= 0.34s
+        2.06      2.07  a5           lag= 0.18s
+        2.07      2.11  e5           lag= 0.14s
+        2.11      2.14  a5           lag= 0.11s
 
 ## Charsiu: A transformer-based phonetic aligner [[arXiv]](https://arxiv.org/abs/2110.03876)
 
