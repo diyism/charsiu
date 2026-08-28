@@ -1,3 +1,63 @@
+    $ ./cut_syl_charsiu.py --aligner charsiu/zh_w2v2_tiny_fc_10ms
+    Available microphone sources:
+      1. Audio  [32, Sink.monitor PipeWire float32le 2ch 48000Hz, RUNNING]
+      2. Dummy  [33, PipeWire float32le 2ch 48000Hz, SUSPENDED]
+      3. android-e3b0c44  [16975, s16le 1ch 44100Hz, SUSPENDED]
+      4. alsa_input.usb-Generic_USB2.0_Device_20220701093623-00.mono-fallback  [18666, s16le 1ch 48000Hz, SUSPENDED]
+      5. bluez_input.84:AC:60:12:C9:0E  [39781, float32le 1ch 48000Hz, SUSPENDED]
+    Select microphone [1]: 4
+    Loading Charsiu model: charsiu/zh_w2v2_tiny_fc_10ms
+    Recording from: alsa_input.usb-Generic_USB2.0_Device_20220701093623-00.mono-fallback
+    window=1.50s hop=0.05s right_context=0.25s sr=16000
+    Press Ctrl-C to stop.
+        0.63      0.66  l            lag= 1.34s
+        0.66      0.85  mou2         lag= 1.15s
+        0.85      1.15  tai4         lag= 0.85s
+        1.33      1.47  mao2         lag= 0.53s
+        1.47      1.49  ao1          lag= 0.51s
+        1.49      1.51  ao2          lag= 0.49s
+        1.51      1.54  ou2          lag= 0.46s
+        2.56      2.68  me5          lag= 1.32s
+        2.68      2.71  o2           lag= 1.29s
+        2.72      2.83  ta1          lag= 1.17s
+        2.83      2.93  ai4          lag= 1.07s
+        2.93      3.16  mao4         lag= 0.84s
+        3.16      3.46  tai4         lag= 0.54s
+        4.50      4.53  ai2          lag= 1.47s
+        4.54      4.61  ai2          lag= 1.39s
+        4.63      4.64  j            lag= 1.36s
+        4.64      4.66  p            lag= 1.34s
+        4.66      4.68  t            lag= 1.32s
+        4.68      4.70  j            lag= 1.30s
+
+    $ ./cut_syl_charsiu.py --aligner charsiu/zh_xlsr_fc_10ms
+    Available microphone sources:
+      1. Audio  [32, Sink.monitor PipeWire float32le 2ch 48000Hz, RUNNING]
+      2. Dummy  [33, PipeWire float32le 2ch 48000Hz, SUSPENDED]
+      3. android-e3b0c44  [16975, s16le 1ch 44100Hz, SUSPENDED]
+      4. alsa_input.usb-Generic_USB2.0_Device_20220701093623-00.mono-fallback  [18666, s16le 1ch 48000Hz, SUSPENDED]
+      5. bluez_input.84:AC:60:12:C9:0E  [39781, float32le 1ch 48000Hz, SUSPENDED]
+    Select microphone [1]: 4
+    Loading Charsiu model: charsiu/zh_xlsr_fc_10ms
+    Recording from: alsa_input.usb-Generic_USB2.0_Device_20220701093623-00.mono-fallback
+    window=1.50s hop=0.05s right_context=0.25s sr=16000
+    Press Ctrl-C to stop.
+        0.67      0.85  mao1         lag= 1.15s
+        0.85      1.01  tai2         lag= 0.99s
+        1.01      1.21  mao2         lag= 0.79s
+        1.21      1.47  tai2         lag= 0.53s
+        2.50      2.62  mao1         lag= 1.38s
+        2.62      2.87  tai1         lag= 1.13s
+        5.20      5.38  mao1         lag= 0.62s
+        5.38      5.55  tai1         lag= 0.45s
+        6.79      6.97  mao2         lag= 1.03s
+        6.97      7.15  tai2         lag= 0.85s
+        7.15      7.38  mao2         lag= 0.62s
+        7.38      7.64  tai2         lag= 0.36s
+       10.89     11.11  kai1         lag= 0.89s
+       11.44     11.66  kai1         lag= 0.34s
+
+
 ## Charsiu: A transformer-based phonetic aligner [[arXiv]](https://arxiv.org/abs/2110.03876)
 
 ### Updates
