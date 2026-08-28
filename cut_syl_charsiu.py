@@ -78,14 +78,14 @@ def list_sources(include_monitors=False):
 
     sources = []
     for line in output.splitlines():
-        parts = line.split()
+        parts = line.split("\t")
         if len(parts) < 5:
             continue
         source = Source(
             index=parts[0],
             name=parts[1],
             driver=parts[2],
-            spec=" ".join(parts[3:-1]),
+            spec=parts[3],
             state=parts[-1],
         )
         if include_monitors or not source.name.endswith(".monitor"):
@@ -118,13 +118,15 @@ def choose_source(args):
         print("Please enter a number from 1 to %d." % len(sources))
 
 
-def start_parec(source_name):
+def start_parec(source_name, latency_msec, process_time_msec):
     cmd = [
         "parec",
         "--device=%s" % source_name,
         "--rate=%d" % SR,
         "--channels=1",
         "--format=s16le",
+        "--latency-msec=%d" % latency_msec,
+        "--process-time-msec=%d" % process_time_msec,
         "--raw",
     ]
     try:
@@ -196,6 +198,16 @@ def format_syllable(start, end, label, lag):
     return "%8.2f  %8.2f  %-12s lag=%5.2fs" % (start, end, label, lag)
 
 
+def format_status(infer_ms, audio_len, stream_time):
+    realtime = infer_ms / max(1.0, audio_len * 1000.0)
+    return "# infer=%6.1fms window=%.2fs realtime_x=%.2f stream=%.2fs" % (
+        infer_ms,
+        audio_len,
+        realtime,
+        stream_time,
+    )
+
+
 def parse_args():
     parser = argparse.ArgumentParser(
         description="Use Charsiu to test realtime Mandarin syllable cutting from a microphone."
@@ -204,11 +216,21 @@ def parse_args():
     parser.add_argument("--include-monitors", action="store_true", help="Also show *.monitor loopback sources.")
     parser.add_argument("--aligner", default="charsiu/zh_xlsr_fc_10ms", help="Charsiu/HuggingFace aligner id.")
     parser.add_argument("--device", default=None, help="torch device, e.g. cuda or cpu. Default: auto.")
-    parser.add_argument("--window", type=float, default=1.50, help="Sliding analysis window in seconds.")
+    parser.add_argument("--window", type=float, default=0.90, help="Sliding analysis window in seconds.")
     parser.add_argument("--hop", type=float, default=0.05, help="Sliding hop in seconds. Default matches 50 ms.")
-    parser.add_argument("--right-context", type=float, default=0.25, help="Delay before emitting a syllable.")
-    parser.add_argument("--min-audio", type=float, default=0.50, help="Seconds to collect before first inference.")
+    parser.add_argument(
+        "--infer-interval",
+        type=float,
+        default=0.20,
+        help="Seconds between model runs. Hop is audio granularity; this controls compute load.",
+    )
+    parser.add_argument("--right-context", type=float, default=0.15, help="Delay before emitting a syllable.")
+    parser.add_argument("--min-audio", type=float, default=0.40, help="Seconds to collect before first inference.")
     parser.add_argument("--print-phones", action="store_true", help="Print raw Charsiu phone intervals too.")
+    parser.add_argument("--profile", action="store_true", help="Print model inference timing.")
+    parser.add_argument("--torch-threads", type=int, default=None, help="Limit PyTorch CPU threads.")
+    parser.add_argument("--latency-msec", type=int, default=30, help="Requested parec recording latency.")
+    parser.add_argument("--process-time-msec", type=int, default=10, help="Requested parec process time.")
     return parser.parse_args()
 
 
@@ -225,6 +247,9 @@ def main():
     print("Loading Charsiu model: %s" % args.aligner)
     try:
         from Charsiu import charsiu_predictive_aligner
+        if args.torch_threads:
+            import torch
+            torch.set_num_threads(args.torch_threads)
     except ModuleNotFoundError as exc:
         missing = exc.name or str(exc)
         raise SystemExit(
@@ -234,10 +259,22 @@ def main():
     charsiu = charsiu_predictive_aligner(aligner=args.aligner, lang="zh", device=args.device)
 
     print("Recording from: %s" % source.name)
-    print("window=%.2fs hop=%.2fs right_context=%.2fs sr=%d" % (args.window, args.hop, args.right_context, SR))
+    print(
+        "window=%.2fs hop=%.2fs infer_interval=%.2fs right_context=%.2fs "
+        "latency=%dms process_time=%dms sr=%d"
+        % (
+            args.window,
+            args.hop,
+            args.infer_interval,
+            args.right_context,
+            args.latency_msec,
+            args.process_time_msec,
+            SR,
+        )
+    )
     print("Press Ctrl-C to stop.")
 
-    proc = start_parec(source.name)
+    proc = start_parec(source.name, args.latency_msec, args.process_time_msec)
     thread = threading.Thread(
         target=reader_thread,
         args=(proc, audio_buffer, chunk_bytes, stop_event),
@@ -246,28 +283,34 @@ def main():
     thread.start()
 
     last_emit_end = 0.0
-    next_tick = time.monotonic() + args.hop
+    next_infer = time.monotonic() + args.infer_interval
 
     try:
         while True:
-            sleep_for = next_tick - time.monotonic()
+            sleep_for = next_infer - time.monotonic()
             if sleep_for > 0:
                 time.sleep(sleep_for)
-            next_tick += args.hop
 
             audio, start_sample, total_sample = audio_buffer.snapshot()
             if audio.size < int(args.min_audio * SR):
+                next_infer = time.monotonic() + args.hop
                 continue
 
             window_start = start_sample / SR
             stream_time = total_sample / SR
 
             try:
+                infer_started = time.monotonic()
                 phones = charsiu.align(audio=audio)
+                infer_ms = (time.monotonic() - infer_started) * 1000.0
             except Exception as exc:
                 print("align failed: %s" % exc, file=sys.stderr)
                 time.sleep(0.5)
+                next_infer = time.monotonic() + args.infer_interval
                 continue
+
+            if args.profile:
+                print(format_status(infer_ms, audio.size / SR, stream_time), flush=True)
 
             if args.print_phones:
                 phone_line = " ".join("%s:%.2f-%.2f" % (p, window_start + s, window_start + e) for s, e, p in phones)
@@ -282,6 +325,8 @@ def main():
                 if abs_end <= emit_before and abs_end > last_emit_end + 0.015:
                     print(format_syllable(abs_start, abs_end, label, stream_time - abs_end), flush=True)
                     last_emit_end = abs_end
+
+            next_infer = time.monotonic() + max(args.infer_interval, args.hop)
 
     except KeyboardInterrupt:
         print("\nStopping.")
